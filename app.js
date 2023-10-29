@@ -12,7 +12,8 @@ const user_store = require("./user_store.json");
 
 async function xrpmain(cardData) {
 
-  const memoDataHex = Buffer.from(cardData, "utf8").toString("hex");
+  const memoString = JSON.stringify(cardData)
+  const memoDataHex = Buffer.from(memoString, "utf8").toString("hex");
 
 
 	// Define the network client
@@ -409,7 +410,7 @@ app.post(
 */
 
     try{
-      xrpmain(cardData)
+      xrpmain(newCard)
     }catch(e){
       console.error(e)
     }
