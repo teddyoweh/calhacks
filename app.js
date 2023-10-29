@@ -19,36 +19,40 @@ async function xrpmain(cardData) {
 	console.log(fund_result);
 
 	// Construct the transaction
-	const tx = {
+
+   const prepared = await client.autofill({
 		TransactionType: "Payment",
 		Account: test_wallet.classicAddress,
-		Destination: "rUeCSy2YaEJEtgGaX1Yei4T9VF6uecLPf9",
 		Amount: "100",
-		Memos: [
-			{
-				Memo: {
-					MemoType: "CardData",
-					MemoData: cardData,
-				},
-			},
-		],
-	};
+		Destination: "rUeCSy2YaEJEtgGaX1Yei4T9VF6uecLPf9",
+    Memos: [
+      {
+        Memo: {
+          MemoType: "CardData",
+          MemoData: cardData,
+        },
+      },
+    ],
+   });
+   const max_ledger = prepared.LastLedgerSequence;
+   console.log("Prepared transaction instructions:", prepared);
+   console.log("Transaction cost:", xrpl.dropsToXrp(prepared.Fee), "XRP");
+   console.log("Transaction expires after ledger:", max_ledger);
 
-	// Sign and autofill the transaction
-	const prepared = await client.autofill(tx);
-	const keypair = xrpl.Keypair.fromSecret(test_wallet.secret);
-	const signed = prepared.signWithKeypair(keypair);
+   const signed = test_wallet.sign(prepared);
+   console.log("Identifying hash:", signed.hash);
+   console.log("Signed blob:", signed.tx_blob);
 
-	// Submit the transaction and wait for response
-	const result = await client.submit(signed.tx_blob);
-	console.log("Transaction was submitted");
+    const tx = await client.submitAndWait(signed.tx_blob);
+    console.log("Transaction result:", tx.result.meta.TransactionResult);
+	console.log(
+		"Balance changes:",
+		JSON.stringify(xrpl.getBalanceChanges(tx.result.meta), null, 2)
+	);
 
-	// Check transaction status
-	const tx_response = await client.request({
-		command: "tx",
-		transaction: result.tx_json.hash,
-	});
-	console.log("Validated:", tx_response.validated);
+
+
+	
 
 	await client.disconnect();
 }
