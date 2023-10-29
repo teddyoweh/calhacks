@@ -34,11 +34,21 @@ async function xrpmain(cardData) {
 		],
 	};
 
-	// Sign and submit the transaction
-	const prepared = await client.autofill(tx);
-	const signed = client.sign(prepared.txJSON, test_wallet.secret);
-	const result = await client.submit(signed.signedTransaction);
-	console.log(result);
+	// Sign and autofill the transaction
+	const prepared = await client.autofill(payment_tx);
+	const keypair = xrpl.Keypair.fromSecret(wallet1.secret);
+	const signed = prepared.signWithKeypair(keypair);
+
+	// Submit the transaction and wait for response
+	const result = await client.submit(signed.tx_blob);
+	console.log("Transaction was submitted");
+
+	// Check transaction status
+	const tx_response = await client.request({
+		command: "tx",
+		transaction: result.tx_json.hash,
+	});
+	console.log("Validated:", tx_response.validated);
 
 	await client.disconnect();
 }
