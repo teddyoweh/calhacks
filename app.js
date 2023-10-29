@@ -151,7 +151,7 @@ app.post("/api/create", upload.single("model"), async (req, res) => {
         console.log(formattedMovesetString)
 
 
-        let suffix = String(cardData).length;
+        let suffix = cardData.toString().length;
         newCardName = `${name}_${suffix}`
 
         const newCard = {
