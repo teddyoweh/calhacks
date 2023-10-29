@@ -300,3 +300,181 @@ class TimeElapsed: CustomStringConvertible {
         return endTime - startTime
     }
 }
+
+enum ResponsiveButtonMode {
+    case scale(Double)
+    case fade(Double)
+    case brightness(Double)
+    case row(Color)
+    
+    static var scale = scale(0.96)
+    static var fade = fade(0.75)
+    static var row = row(Color.primary)
+}
+
+struct ResponsiveButton<Label: View>: View {
+    var modes: [ResponsiveButtonMode]
+    var inAnimation: Animation?
+    var hapticsEnabled = false
+    var enabled = true
+    var action: () -> Void
+    @ViewBuilder var label: Label
+    
+    @State var pressing = false
+    
+    var body: some View {
+        Button {
+            if hapticsEnabled {
+                let generator = UISelectionFeedbackGenerator()
+                generator.selectionChanged()
+            }
+            
+            action()
+        } label: {
+            let (scale, fade, brightness, rowOpacity, rowColor): (Double, Double, Double, Double, Color) = {
+                var scale = Double(1)
+                var fade = Double(1)
+                var brightness = Double(0)
+                var rowOpacity = Double(0)
+                var rowColor = Color.clear
+                
+                for mode in modes {
+                    switch mode {
+                    case .scale(let double):
+                        scale = double
+                    case .fade(let double):
+                        fade = double
+                    case .brightness(let double):
+                        brightness = double
+                    case .row(let color):
+                        rowOpacity = 0.1
+                        rowColor = color
+                    }
+                }
+                
+                if pressing {
+                    return (scale, fade, brightness, rowOpacity, rowColor)
+                } else {
+                    return (1, 1, 0, 0, rowColor)
+                }
+            }()
+            
+            label
+                .scaleEffect(scale)
+                .opacity(fade)
+                .background {
+                    rowColor.opacity(rowOpacity)
+                }
+                .brightness(brightness)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(DefaultButtonStyle())
+        .onButtonPress { pressing in
+            if enabled {
+                if pressing {
+//                    let generator = UIImpactFeedbackGenerator(style: .soft)
+//                    generator.impactOccurred(intensity: <#T##CGFloat#>)
+//                    generator.impactOccurred()
+                    if hapticsEnabled {
+                        let generator = UISelectionFeedbackGenerator()
+                        generator.selectionChanged()
+                    }
+                    
+                    if let inAnimation {
+                        withAnimation(inAnimation) {
+                            self.pressing = pressing
+                        }
+                    } else {
+                        self.pressing = pressing
+                    }
+                    
+                } else {
+                    withAnimation(.spring(response: 0.4, dampingFraction: 1, blendDuration: 1)) {
+                        self.pressing = pressing
+                    }
+                }
+            } else {
+                self.pressing = false
+            }
+        }
+    }
+}
+
+struct DefaultButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        return configuration.label
+    }
+}
+
+
+extension Array where Element == ResponsiveButtonMode {
+    static var scale = [ResponsiveButtonMode.scale(0.96)]
+    static var fade = [ResponsiveButtonMode.fade(0.5)]
+    static var row = [ResponsiveButtonMode.row(Color.primary)]
+}
+
+extension View {
+    func onButtonPress(block: @escaping (Bool) -> Void) -> some View {
+        _onButtonGesture { pressing in
+            block(pressing)
+        } perform: {}
+    }
+}
+
+extension View {
+    func onButtonPressAnimation(block: @escaping (Bool) -> Void) -> some View {
+        contentShape(Rectangle())
+            .buttonStyle(DefaultButtonStyle())
+            ._onButtonGesture { pressing in
+                if pressing {
+                    block(pressing)
+                } else {
+                    withAnimation(.spring(response: 0.4, dampingFraction: 1, blendDuration: 1)) {
+                        block(pressing)
+                    }
+                }
+            } perform: {}
+    }
+}
+
+extension Dictionary {
+    func percentEncoded() -> Data? {
+        map { key, value in
+            let escapedKey = "\(key)".addingPercentEncoding(withAllowedCharacters: .urlQueryValueAllowed) ?? ""
+            let escapedValue = "\(value)".addingPercentEncoding(withAllowedCharacters: .urlQueryValueAllowed) ?? ""
+            return escapedKey + "=" + escapedValue
+        }
+        .joined(separator: "&")
+        .data(using: .utf8)
+    }
+}
+
+extension CharacterSet {
+    static let urlQueryValueAllowed: CharacterSet = {
+        let generalDelimitersToEncode = ":#[]@" // does not include "?" or "/" due to RFC 3986 - Section 3.4
+        let subDelimitersToEncode = "!$&'()*+,;="
+        
+        var allowed: CharacterSet = .urlQueryAllowed
+        allowed.remove(charactersIn: "\(generalDelimitersToEncode)\(subDelimitersToEncode)")
+        return allowed
+    }()
+}
+
+struct HacksProgressView: View {
+    var tintColor: Color
+    var progress: CGFloat
+
+    var body: some View {
+        GeometryReader { geometry in
+            Capsule(style: .circular)
+                .fill(tintColor)
+                .opacity(0.1)
+                .overlay(alignment: .leading) {
+                    Capsule(style: .circular)
+                        .fill(tintColor)
+                        .frame(width: max(1, progress * geometry.size.width))
+                        .opacity(progress <= 0.02 ? 0 : 1)
+                }
+        }
+    }
+}

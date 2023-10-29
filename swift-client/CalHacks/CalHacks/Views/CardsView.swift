@@ -6,6 +6,8 @@
 //
 
 import SwiftUI
+import Alamofire
+import Files
 
 struct CardsView: View {
     @ObservedObject var model: ViewModel
@@ -20,12 +22,41 @@ struct CardsView: View {
             ScrollView {
                 LazyVStack(spacing: 20) {
                     ForEach(Array(zip(model.cards.indices, model.cards)), id: \.1.id) { index, card in
-                        CardView(card: card)
-                            .scaleEffect(model.entered ? 1 : 0.9)
-                            .opacity(model.entered ? 1 : 0)
-                            .animation(.spring(response: 0.2, dampingFraction: 1, blendDuration: 1).delay(Double(index) * 0.1 + 0.55), value: model.entered)
+                        ResponsiveButton(modes: .scale) {
+                            model.selectedCard = card
+                        } label: {
+                            CardView(card: card)
+                                .overlay {
+//                                    let color = UIColor(hexString: card.backgroundColor) ?? .systemRed
+                                    let color = UIColor.systemPink
+                                    
+                                    if model.selectedCard?.id == card.id {
+                                        RoundedRectangle(cornerRadius: 16)
+                                            .stroke(.white, lineWidth: 2)
+                                            .shadow(color: .black.opacity(0.5), radius: 8, x: 0, y: 0)
+                                            .overlay(alignment: .topLeading) {
+                                                Text("Selected")
+                                                    .textCase(.uppercase)
+                                                    .padding(.horizontal, 10)
+                                                    .padding(.vertical, 6)
+                                                    .background {
+                                                        RoundedRectangle(cornerRadius: 8)
+                                                            .fill(color.color)
+                                                            .shadow(color: .black.opacity(0.5), radius: 8, x: 0, y: 0)
+                                                    }
+                                            }
+                                            .mask {
+                                                RoundedRectangle(cornerRadius: 16)
+                                            }
+                                    }
+                                }
+                                .scaleEffect(model.entered ? 1 : 0.9)
+                                .opacity(model.entered ? 1 : 0)
+                                .animation(.spring(response: 0.2, dampingFraction: 1, blendDuration: 1).delay(Double(index) * 0.1 + 0.55), value: model.entered)
+                        }
                     }
                 }
+                .padding(.top, 1)
                 .padding(.horizontal, 20)
                 .padding(.bottom, 32)
             }
@@ -59,9 +90,11 @@ struct CardsView: View {
 
 struct CardView: View {
     var card: Card
+    @State var imagePreview: UIImage?
     
     var body: some View {
-        let color = UIColor(hexString: card.backgroundColor) ?? .systemRed
+//        let color = UIColor(hexString: card.backgroundColor) ?? .systemRed
+        let color = UIColor.systemPink
         let color2 = color.offset(by: -0.1)
         let color3 = color.offset(by: 0.05)
         
@@ -74,14 +107,62 @@ struct CardView: View {
                         .brightness(0.2)
                 }
                 .padding(.bottom, -32)
+                .overlay {
+                    if let image = imagePreview {
+                        Image(uiImage: image)
+                            .aspectRatio(contentMode: .fit)
+//                            .pad
+                    }
+                }
+                
             
             VStack(alignment: .leading, spacing: 12) {
-                Text(card.title)
+                Text(card.cardName)
                     .font(.title)
                     .textCase(.uppercase)
+                    .multilineTextAlignment(.leading)
+                    .onAppear {
+                        if let image = card.imagePath {
+                            print("image: \(image)")
+                            downloadImage(path: image)
+                        }
+                    }
                 
-                Text(card.description)
-                    .font(.title3)
+                HStack(alignment: .top) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(card.moveset.moveOne.name)
+                        
+                        Text(card.moveset.moveOne.moveDescription)
+                            .fontWeight(.regular)
+                            .font(.caption)
+                    }
+                    .multilineTextAlignment(.leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 20)
+                    .background {
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(Color.black.opacity(0.1))
+                    }
+                    
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(card.moveset.moveTwo.name)
+                        
+                        Text(card.moveset.moveTwo.moveDescription)
+                            .fontWeight(.regular)
+                            .font(.caption)
+                    }
+                    .multilineTextAlignment(.leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 20)
+                    .background {
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(Color.black.opacity(0.1))
+                    }
+                }
+//                Text(card.description)
+//                    .font(.title3)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 20)
@@ -115,6 +196,39 @@ struct CardView: View {
         }
         .mask {
             RoundedRectangle(cornerRadius: 16)
+        }
+    }
+    
+    func downloadImage(path: String) {
+        let url = URL(string: "http://50.116.36.84:3000/")!.appendingPathComponent(path)
+        
+        print("Downloading [image]: \(url)")
+        let destination: DownloadRequest.Destination = { _, _ in
+            let fileURL = Folder.temporary.url.appendingPathComponent("\(UUID().uuidString).png")
+            return (fileURL, [.removePreviousFile, .createIntermediateDirectories])
+        }
+        
+        AF.download(url, to: destination).response { response in
+            if let error = response.error {
+                print("Error downloading file from Alamofire: \(error)")
+            } else {
+                print("File downloaded successfully: \(response.fileURL?.path ?? "")")
+                
+                if let url = response.fileURL {
+                    print("Loaded png! \(url)")
+                    
+                    do {
+                        let data = try Data(contentsOf: url)
+                        if let image = UIImage(data: data) {
+                            self.imagePreview = image
+                        } else {
+                            print("No image from data")
+                        }
+                    } catch {
+                        print("Error: \(error)")
+                    }
+                }
+            }
         }
     }
 }

@@ -30,7 +30,7 @@ struct ScanView: View {
                 CapturePrimaryView(scanViewModel: scanViewModel)
             }
 
-            if scanViewModel.finished {
+            if scanViewModel.finishedScanningProcess {
                 ReconstructionProgressView(model: model, scanViewModel: scanViewModel, outputFile: scanViewModel.outputFile)
             }
         }
@@ -52,19 +52,30 @@ struct ScanView: View {
                             .font(.largeTitle)
 
                         Button {
-                            scanViewModel.finishScan()
+                            if !scanViewModel.finishedScanningProcess {
+                                scanViewModel.finishScan()
+                            }
                         } label: {
                             Text("Next")
                                 .foregroundColor(.white)
-                                .padding(.vertical, 16)
-                                .padding(.horizontal, 20)
+                                .padding(.vertical, 20)
+                                .padding(.horizontal, 32)
+                                .opacity(scanViewModel.finishedScanningProcess ? 0 : 1)
+                                .overlay {
+                                    ProgressView()
+                                        .controlSize(.extraLarge)
+                                        .environment(\.colorScheme, .dark)
+                                        .opacity(scanViewModel.finishedScanningProcess ? 1 : 0)
+                                }
                                 .background {
                                     Color.green
                                         .brightness(-0.1)
                                         .mask {
-                                            RoundedRectangle(cornerRadius: 16)
+                                            RoundedRectangle(cornerRadius: 24)
                                         }
                                 }
+                                .opacity(scanViewModel.finishedScanningProcess ? 0.5 : 1)
+                                .disabled(scanViewModel.finishedScanningProcess)
                         }
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -78,6 +89,23 @@ struct ScanView: View {
                     }
                 }
             }
+        }
+        .overlay(alignment: .bottomLeading) {
+            Menu {
+                Button("Finish") {
+                    for file in imagesFolder.files {
+                        try? file.delete()
+                    }
+                    for file in sampleImagesFolder.files {
+                        try? file.copy(to: imagesFolder)
+                    }
+                    print("imagesFolder: \(imagesFolder.files.count())")
+                    scanViewModel.finishScan()
+                }
+            } label: {
+                Image(systemName: "ellipsis.circle")
+            }
+            .padding(16)
         }
         .overlay(alignment: .top) {
             let showReset = switch scanViewModel.session?.state {

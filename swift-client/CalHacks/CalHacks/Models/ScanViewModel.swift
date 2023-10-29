@@ -13,10 +13,14 @@ import SwiftUI
 let snapshotsFolder = try! Folder.documents!.createSubfolderIfNeeded(withName: "Snapshots")
 let imagesFolder = try! Folder.documents!.createSubfolderIfNeeded(withName: "Images")
 let modelsFolder = try! Folder.documents!.createSubfolderIfNeeded(withName: "Models")
+let sampleSnapshotsFolder = try! Folder(path: Bundle.main.resourceURL!.appendingPathComponent("Snapshots/").path)
+let sampleImagesFolder = try! Folder(path: Bundle.main.resourceURL!.appendingPathComponent("Images/").path)
+let sampleModelsFolder = try! Folder(path: Bundle.main.resourceURL!.appendingPathComponent("Models/").path)
 
 @MainActor class ScanViewModel: ObservableObject {
     @Published var session: ObjectCaptureSession?
     @Published var finished = false
+    @Published var finishedScanningProcess = false
 
     @Published var photogrammetrySession: PhotogrammetrySession?
     @Published var filename = "\(UUID().uuidString).usdz"
@@ -64,28 +68,33 @@ let modelsFolder = try! Folder.documents!.createSubfolderIfNeeded(withName: "Mod
     }
 
     func finishScan() {
-        session?.finish()
-
-        var configuration = PhotogrammetrySession.Configuration()
-        configuration.checkpointDirectory = snapshotsFolder.url
-
-        do {
+        DispatchQueue.main.async {
             withAnimation {
-                finished = true
+                self.finishedScanningProcess = true
             }
+        }
 
-            let timer = TimeElapsed()
-            print("Starting photogrammetrySession")
-            photogrammetrySession = try PhotogrammetrySession(
-                input: imagesFolder.url,
-                configuration: configuration
-            )
-            print("Created sessino: \(timer)")
-            
-            processSession.send()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+            self.finished = true
+            self.session?.finish()
 
-        } catch {
-            print("Error: \(error)")
+            var configuration = PhotogrammetrySession.Configuration()
+            configuration.checkpointDirectory = snapshotsFolder.url
+
+            do {
+                let timer = TimeElapsed()
+                print("Starting photogrammetrySession")
+                self.photogrammetrySession = try PhotogrammetrySession(
+                    input: imagesFolder.url,
+                    configuration: configuration
+                )
+                print("Created photogrammetrySession: \(timer)")
+
+                self.processSession.send()
+
+            } catch {
+                print("Error: \(error)")
+            }
         }
     }
 

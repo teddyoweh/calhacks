@@ -17,7 +17,7 @@ struct MainView: View {
                 case .cards:
                     CardsView(model: model)
                 case .battle:
-                    CardsView(model: model)
+                    BattleView(model: model)
                 case .config:
                     ConfigView(model: model)
                 }
@@ -68,6 +68,9 @@ struct MainView: View {
             Color.black
                 .brightness(0.1)
                 .ignoresSafeArea()
+        }
+        .overlay {
+            GameView(model: model)
         }
     }
 }

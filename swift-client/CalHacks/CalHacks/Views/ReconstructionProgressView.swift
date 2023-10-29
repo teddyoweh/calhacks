@@ -15,7 +15,6 @@ struct ReconstructionProgressView: View {
     let outputFile: URL
     @State var completed = false
     @State var cancelled = false
-    
 
     @State private var progress: Float = 0
     @State private var estimatedRemainingTime: TimeInterval?
@@ -26,6 +25,7 @@ struct ReconstructionProgressView: View {
     @State private var isCancelling: Bool = false
 
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.dismiss) var dismiss
     private var padding: CGFloat {
         horizontalSizeClass == .regular ? 60.0 : 24.0
     }
@@ -34,12 +34,18 @@ struct ReconstructionProgressView: View {
         return !completed && !gotError && !cancelled
     }
 
-    func restart() {}
+    func restart() {
+        print("restart!")
+    }
 
-    func view() {}
+    func view() {
+        print("view!")
+        model.finishedScanURL = outputFile
+        dismiss()
+    }
 
     var body: some View {
-        VStack(spacing: 0) {
+        VStack(spacing: 16) {
             if isReconstructing() {
                 HStack {
                     Button {
@@ -50,7 +56,6 @@ struct ReconstructionProgressView: View {
                         Text("Cancel (Object Reconstruction)")
                             .font(.headline)
                             .bold()
-                            .padding(30)
                             .foregroundColor(.blue)
                     }
                     .padding(.trailing)
@@ -59,23 +64,23 @@ struct ReconstructionProgressView: View {
                 }
             }
 
-            Spacer()
-
-            TitleView()
-
-            Spacer()
-
-            ProgressBarView(progress: progress,
-                            estimatedRemainingTime: estimatedRemainingTime,
-                            processingStageDescription: processingStageDescription)
-                .padding(padding)
-
-            Spacer()
-            Spacer()
-            Spacer()
+            ProgressBarView(
+                progress: progress,
+                estimatedRemainingTime: estimatedRemainingTime,
+                processingStageDescription: processingStageDescription
+            )
+            .padding(padding)
         }
         .frame(maxWidth: .infinity)
-        .padding(.bottom, 20)
+        .padding(.vertical, 20)
+        .padding(.horizontal, 20)
+        .background {
+            VisualEffectView(.systemChromeMaterialDark)
+                .mask {
+                    RoundedRectangle(cornerRadius: 16)
+                }
+        }
+        .padding(20)
         .alert(
             "Failed:  " + (error != nil ? "\(String(describing: error!))" : ""),
             isPresented: $gotError,
@@ -91,7 +96,7 @@ struct ReconstructionProgressView: View {
             process()
         }
     }
-    
+
     func process() {
         Task {
             guard let session = scanViewModel.photogrammetrySession else {
@@ -218,7 +223,7 @@ struct ProgressBarView: View {
 
     var body: some View {
         VStack(spacing: 22) {
-            VStack(spacing: 12) {
+            VStack(spacing: 16) {
                 HStack(spacing: 0) {
                     Text(processingStageDescription ?? LocalizedString.processing)
 
@@ -231,6 +236,13 @@ struct ProgressBarView: View {
                 .font(.body)
 
                 ProgressView(value: progress)
+                    .progressViewStyle(GaugeProgressStyle())
+                    .frame(width: 96, height: 96)
+                    .overlay {
+                        ProgressView()
+                            .controlSize(.large)
+                            .environment(\.colorScheme, .dark)
+                    }
             }
 
             HStack(alignment: .center, spacing: 0) {
@@ -257,7 +269,7 @@ struct ProgressBarView: View {
                 }
                 .font(.subheadline)
             }
-            .foregroundColor(.secondary)
+            .opacity(0.75)
         }
     }
 
@@ -309,5 +321,25 @@ struct UntilProcessingCompleteFilter<Base>: AsyncSequence,
         }
 
         return nextElement
+    }
+}
+
+struct GaugeProgressStyle: ProgressViewStyle {
+    var strokeColor = Color.white
+    var strokeWidth = CGFloat(8)
+
+    func makeBody(configuration: Configuration) -> some View {
+        let fractionCompleted = configuration.fractionCompleted ?? 0
+
+        return ZStack {
+            Circle()
+                .stroke(strokeColor, style: StrokeStyle(lineWidth: strokeWidth, lineCap: .round))
+                .opacity(0.1)
+
+            Circle()
+                .trim(from: 0, to: fractionCompleted)
+                .stroke(strokeColor, style: StrokeStyle(lineWidth: strokeWidth, lineCap: .round))
+                .rotationEffect(.degrees(-90))
+        }
     }
 }

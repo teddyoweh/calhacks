@@ -11,13 +11,34 @@ import Files
 struct ConfigView: View {
     @ObservedObject var model: ViewModel
     
+    @State var strings = [
+        "Andrew Zheng - frontend",
+        "Teddy Oweh - backend",
+        "Kevin Li - backend"
+    ].shuffled()
+    
+    
+    
     var body: some View {
         VStack {
             Text("Config")
                 .font(.largeTitle)
                 .textCase(.uppercase)
             
-            FileExplorerView(folder: Folder.documents!)
+            ScrollView {
+                VStack {
+                    FileExplorerView(folder: Folder.documents!)
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 20)
+                
+                    VStack(spacing: 20) {
+                        ForEach(strings, id: \.self) { string in
+                            Text(string)
+                        }
+                    }
+                    .opacity(0.5)
+                }
+            }
         }
         .padding(.top, 32)
     }
