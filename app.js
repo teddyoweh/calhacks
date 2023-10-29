@@ -175,6 +175,8 @@ app.post(
 	async (req, res) => {
 		console.log("Recieved Post request");
 
+    console.log(req.files);
+
     const imageFile = req.files["image"][0];
 	  const modelFile = req.files["model"][0];
 
