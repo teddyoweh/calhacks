@@ -31,6 +31,8 @@ const openai = new OpenAI({
 	apiKey,
 });
 
+app.use(express.static("public"));
+
 app.get("/", (req, res) => {
 	res.send("Hello World!");
 });
@@ -44,27 +46,28 @@ app.get("/api/get-cards", (req, res) => {
     }
 });
 
-app.get("/api/card", (req, res) => {
-    const cardName = req.query.cardName;
+app.get("/api/card/:cardKey", (req, res) => {
+	const cardKey = req.params.cardKey; // Retrieve card key from the route parameter
 
-    if (!cardName) {
-        return res.status(400).json({ message: "Missing cardName parameter" });
-    }
+	if (!cardKey) {
+		return res.status(400).json({ message: "Missing cardKey parameter" });
+	}
 
-    try {
-        const cardData = require("./cardData.json"); // Load the JSON file
+	try {
+		const cardData = require("./cardData.json"); // Load the JSON file
 
-        // Check if the cardName exists in the cardData object
-        if (cardData.hasOwnProperty(cardName)) {
-            const card = cardData[cardName];
-            res.status(200).json(card);
-        } else {
-            res.status(404).json({ message: "Card not found" });
-        }
-    } catch (err) {
-        res.status(500).json({ message: "Error reading card data" });
-    }
+		// Check if the cardKey exists in the cardData object
+		if (cardData.hasOwnProperty(cardKey)) {
+			const card = cardData[cardKey];
+			res.status(200).json(card);
+		} else {
+			res.status(404).json({ message: "Card not found" });
+		}
+	} catch (err) {
+		res.status(500).json({ message: "Error reading card data" });
+	}
 });
+
 
 
 app.post("/api/create", upload.single("model"), async (req, res) => {
@@ -111,7 +114,7 @@ app.post("/api/create", upload.single("model"), async (req, res) => {
         newCardName = `${name}_${suffix}`
 
         const newCard = {
-            cardName: newCardName,
+            cardName: name,
             modelPath:`models/${filePath}`,
             moveset:movesetParse,
         }
