@@ -1,7 +1,7 @@
 {
   "Pumpkin": {
     "cardName": "Pumpkin",
-    "modelPath": "models/pumpkin",
+    "modelPath": "models/pumpkin.jpeg",
     "moveset": {
       "moveOne": {
         "name": "Gourd Slam",
@@ -17,7 +17,7 @@
   },
   "Scientist": {
     "cardName": "Scientist",
-    "modelPath": "models/test-image.jpg",
+    "modelPath": "models/scientist.jpeg",
     "moveset": {
       "moveOne": {
         "name": "Chemical Blast",

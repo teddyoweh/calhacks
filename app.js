@@ -2,6 +2,7 @@ require("dotenv").config();
 const express = require("express");
 const multer = require("multer");
 const path = require("path");
+const xrpl = require("xrpl");
 const fs = require("fs");
 const axios = require("axios");
 const { OpenAI } = require("openai");
@@ -42,7 +43,7 @@ const my_wallet = xrpAPI.generateAddress();
 
 const storage = multer.diskStorage({
 	destination: (req, file, cb) => {
-		cb(null, "models"); 
+		cb(null, "public/models"); 
 	},
     filename: (req, file, cb) => {
         cb(null, file.originalname); 
@@ -59,6 +60,8 @@ const openai = new OpenAI({
 	apiKey,
 });
 
+app.use(express.static("public"));
+
 app.get("/", (req, res) => {
 	res.send("Hello World!");
 });
@@ -72,14 +75,20 @@ app.get("/api/get-cards", (req, res) => {
     }
 });
 
-app.get("/api/card", (req, res) => {
-    const cardName = req.query.cardName;
+app.get("/api/card/:cardKey", (req, res) => {
+	const cardKey = req.params.cardKey; // Retrieve card key from the route parameter
 
-    if (!cardName) {
-        return res.status(400).json({ message: "Missing cardName parameter" });
-    }
+  console.log("Retrieving card: ", cardKey)
+
+	if (!cardKey) {
+		return res.status(400).json({ message: "Missing cardKey parameter" });
+	}
+
+	try {
+		let cardData = [];
 
     try {
+ 
         const cardData = require("./cardData.json"); 
 
          if (cardData.hasOwnProperty(cardName)) {
@@ -91,7 +100,9 @@ app.get("/api/card", (req, res) => {
     } catch (err) {
         res.status(500).json({ message: "Error reading card data" });
     }
+ 
 });
+
 
 
 app.post("/api/create", upload.single("model"), async (req, res) => {
@@ -134,21 +145,25 @@ app.post("/api/create", upload.single("model"), async (req, res) => {
         console.log(formattedMovesetString)
 
 
+        let suffix = cardData.keys(obj).length;
+        newCardName = `${name}_${suffix}`
+
         const newCard = {
-            cardName:`name_${cardData.length}`,
+            cardName: name,
             modelPath:`models/${filePath}`,
             moveset:movesetParse,
         }
 
 
-
-        cardData[name] = newCard;
+        
+        cardData[newCardName] = newCard;
 
         console.log("Adding new card to cardData.json: ", newCard);
 
         
         fs.writeFileSync("cardData.json", JSON.stringify(cardData, null, 2));
 
+ 
         const xrpAddress = user_store[userid].xrpAddress ; 
         const xrpAmount = '10'; 
         const payment = {
@@ -173,15 +188,11 @@ app.post("/api/create", upload.single("model"), async (req, res) => {
         const signedPayment = xrpAPI.sign(preparedPayment, private_key); 
         const result = await xrpAPI.submit(signedPayment.signedTransaction);
         console.log('XRP Transaction Result:', result);
-        res.status(201).json({
-            message: "File uploaded successfully",
-            fileName: req.file.filename,
-            description: newCard.description,
-        });
-    } catch (error) {
-        console.error("Error uploading file:", error);
-        res.status(500).json({ message: "Error uploading file" });
-    }
+ 
+        console.log("Write successful")
+
+
+ 
 });
 
 
