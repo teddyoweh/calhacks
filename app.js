@@ -3,18 +3,24 @@ const express = require("express");
 const multer = require("multer");
 const path = require("path");
 const xrpl = require("xrpl");
+
+const fs = require("fs");
+const axios = require("axios");
+const { OpenAI } = require("openai");
+const user_store = require("./user_store.json");
+/*
 const { generate_faucet_wallet } = require("xrpl-wallet");
+const { Payment } = require("xrpl-models-transactions");
 const {
 	safe_sign_and_autofill_transaction,
 	send_reliable_submission,
 } = require("xrpl-transaction");
 const { IssuedCurrencyAmount } = require("xrpl-models");
 const { Payment } = require("xrpl-models-transactions");
-const fs = require("fs");
-const axios = require("axios");
-const { OpenAI } = require("openai");
-const user_store = require("./user_store.json");
-
+const {
+	safe_sign_and_autofill_transaction,
+	send_reliable_submission,
+} = require("xrpl-transaction");*/
 
 
 /*
@@ -75,7 +81,7 @@ const openai = new OpenAI({
 	apiKey,
 });
 
-
+/*
 async function mintNFT(senderWallet, receiverWallet, cardData) {
     // Create a Payment transaction with an IssuedCurrencyAmount representing the NFT
     const nftPaymentTx = Payment({
@@ -114,9 +120,9 @@ async function mintNFT(senderWallet, receiverWallet, cardData) {
         console.error("NFT payment failed");
         return false;
     }
-}
+  }
 
-
+*/
 app.use(express.static("public"));
 
 app.get("/", (req, res) => {
@@ -271,7 +277,7 @@ app.post("/api/create", upload.single("model"), async (req, res) => {
   */
 
 	// Sign and autofill the transaction
-
+    /*
 	// Create a client to connect to the XRPL test network
 	const client = new xrpl.Client("wss://s.altnet.rippletest.net:51233");
 
@@ -322,7 +328,7 @@ app.post("/api/create", upload.single("model"), async (req, res) => {
 	console.log("Balances of wallets after Payment tx:");
 	console.log(get_balance(wallet1.classic_address, client));
 	console.log(get_balance(wallet2.classic_address, client));
-
+*/
 	console.log("Write successful");
 
 	res.status(200).json({
