@@ -177,8 +177,8 @@ app.post(
 
     console.log(req.files);
 
-    const imageFile = req.files["image"][0];
-	  const modelFile = req.files["model"][0];
+    const imageFile = req.files["image"];
+	  const modelFile = req.files["model"];
 
     if (!imageFile || !modelFile) {
 		console.log("One or both files missing!");
