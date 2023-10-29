@@ -1,0 +1,15 @@
+{
+  "name": "calhhacks",
+  "version": "1.0.0",
+  "description": "code",
+  "main": "app.js",
+  "scripts": {
+    "test": "start"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git"
+  },
+  "author": "",
+  "license": "ISC"
+}
