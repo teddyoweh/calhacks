@@ -409,11 +409,11 @@ app.post(
 
 */
 
-    try{
+    /*try{
       xrpmain(newCard)
     }catch(e){
       console.error(e)
-    }
+    }*/
 		console.log("Write successful");
 
 		res.status(200).json({
