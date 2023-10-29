@@ -20,3 +20,30 @@
 // 	.catch((error) => {
 // 		console.error("Error:", error.message);
 // 	});
+
+
+const axios = require('axios');
+const FormData = require('form-data');
+const fs = require('fs');
+
+const apiUrl = 'http://localhost:3000/api/create'; // Replace with your API endpoint
+
+const uploadImage = async () => {
+  try {
+    const formData = new FormData();
+    formData.append('model', fs.createReadStream('test-image.jpg')); // Replace 'test-image.jpg' with your image file name
+    formData.append('name', 'Scientist'); // Replace 'YourName' with the desired name
+
+    const response = await axios.post(apiUrl, formData, {
+      headers: {
+        ...formData.getHeaders(),
+      },
+    });
+
+    console.log(response.data);
+  } catch (error) {
+    console.error('Error uploading file:', error.message);
+  }
+};
+
+uploadImage();

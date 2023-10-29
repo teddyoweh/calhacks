@@ -1,8 +1,8 @@
 {
-  "Pumpkin":{
+  "Pumpkin": {
     "cardName": "Pumpkin",
     "modelPath": "models/pumpkin",
-    "moveset":{
+    "moveset": {
       "moveOne": {
         "name": "Gourd Slam",
         "damage": 20,
@@ -12,6 +12,22 @@
         "name": "Jack-o'-Smash",
         "damage": 25,
         "moveDescription": "The Pumpkin character transforms into a giant jack-o'-lantern and smashes into the opponent, dealing massive damage."
+      }
+    }
+  },
+  "Scientist": {
+    "cardName": "Scientist",
+    "modelPath": "models/test-image.jpg",
+    "moveset": {
+      "moveOne": {
+        "name": "Chemical Blast",
+        "damage": 20,
+        "moveDescription": "Unleash a powerful explosion of volatile chemicals."
+      },
+      "moveTwo": {
+        "name": "Invention Attack",
+        "damage": 15,
+        "moveDescription": "Unleash a powerful attack using your latest invention."
       }
     }
   }

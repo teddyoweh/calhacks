@@ -14,7 +14,10 @@ const PORT = 3000;
 const storage = multer.diskStorage({
 	destination: (req, file, cb) => {
 		cb(null, "models"); 
-	}
+	},
+    filename: (req, file, cb) => {
+        cb(null, file.originalname); 
+    }
 });
 
 const upload = multer({ storage: storage });
@@ -65,29 +68,60 @@ app.get("/api/card", (req, res) => {
 
 app.post("/api/create", upload.single("model"), async (req, res) => {
     try {
+        console.log("Recieved Post request");
         if (!req.file) {
+            console.log("No file!")
             return res.status(400).json({ message: "No file uploaded" });
         }
 
         const { name } = req.body;
         const filePath = req.file.filename;
 
+        console.log("File uploaded: ", filePath)
         
         let cardData = [];
         try {
+            console.log("Reading cardData.json")
             cardData = JSON.parse(fs.readFileSync("cardData.json"));
+
         } catch (err) {
+            console.error("Error reading cardData.json:", err);
+
             res.status(500).json({ message: "Error uploading reading file" });
         }
 
+        console.log(cardData)
+
+
         const moveset = await generateMoveset(name);
 
-        const newCard = { name, filePath, moveset };
+        console.log(moveset);
 
-        cardData.push(newCard);
+        movesetParse = JSON.parse(moveset);
+
+        console.log(movesetParse)
+
+        const formattedMovesetString = JSON.stringify(moveset, null, 2);
+
+        console.log(formattedMovesetString)
+
+
+        const newCard = {
+            cardName:name,
+            modelPath:`models/${filePath}`,
+            moveset:movesetParse,
+        }
+
+
+
+        cardData[name] = newCard;
+
+        console.log("Adding new card to cardData.json: ", newCard);
 
         
-        fs.writeFileSync("cardData.json", JSON.stringify(cardData));
+        fs.writeFileSync("cardData.json", JSON.stringify(cardData, null, 2));
+
+        console.log("Write successful")
 
         res.status(201).json({
             message: "File uploaded successfully",
@@ -95,6 +129,7 @@ app.post("/api/create", upload.single("model"), async (req, res) => {
             description: newCard.description,
         });
     } catch (error) {
+        console.error("Error uploading file:", error);
         res.status(500).json({ message: "Error uploading file" });
     }
 });
@@ -102,9 +137,10 @@ app.post("/api/create", upload.single("model"), async (req, res) => {
 
 async function generateMoveset(name) {
 	try {
+        console.log("Generating moveset for: ", name)
 
-    promptToSend = "Generate a moveset for a card game character consisting of two moves based on the name of the object/character. Each move should deal between 10 - 25 damage points. Try and base the damage values based on how dangerous or unique the object is. The movedescription should be a one line phrase. Return this moveset in the following format: { moveOne{name: moveName,damage: #, moveDescription: insert a relevant description}, moveTwo{name: moveName,damage: #, moveDescription: insert a relevant description} } Name: " + name
-		const response = await openai.createChatCompletion({
+    promptToSend = "Generate a moveset for a card game character consisting of two moves based on the name of the object/character. Each move should deal between 10 - 25 damage points. Try and base the damage values based on how dangerous or unique the object is. The moveDescription should be a one line phrase. Make sure to add double quotes around each key. Return this moveset in the following JSON format: { moveOne{name: moveName,damage: #, moveDescription: insert a relevant description}, moveTwo{name: moveName,damage: #, moveDescription: insert a relevant description} } ONLY RETURN THIS JSON OBJECT. DO NOT INCLUDE ANY OTHER TEXT. Name: " + name
+		const response = await openai.chat.completions.create({
 			model: "gpt-3.5-turbo",
 			messages: [
 				{
@@ -119,8 +155,9 @@ async function generateMoveset(name) {
 			max_tokens: 500,
 			temperature: 0.9,
 		});
+        console.log("Generated moveset: ", response.choices[0].message.content);
 
-    return response.data.choices[0].message.content;
+    return response.choices[0].message.content;
 	} catch (error) {
 		console.error("Error generating description:", error);
 		return "Description not available";
