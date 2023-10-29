@@ -9,7 +9,43 @@ const axios = require("axios");
 const { OpenAI } = require("openai");
 const user_store = require("./user_store.json");
 
+
+async function xrpmain(cardData) {
+	// Define the network client
+	const client = new xrpl.Client("wss://s.altnet.rippletest.net:51233");
+	await client.connect();
+	const fund_result = await client.fundWallet();
+	const test_wallet = fund_result.wallet;
+	console.log(fund_result);
+
+	// Construct the transaction
+	const tx = {
+		TransactionType: "Payment",
+		Account: test_wallet.classicAddress,
+		Destination: "rUeCSy2YaEJEtgGaX1Yei4T9VF6uecLPf9",
+		Amount: "100",
+		Memos: [
+			{
+				Memo: {
+					MemoType: "CardData",
+					MemoData: cardData,
+				},
+			},
+		],
+	};
+
+	// Sign and submit the transaction
+	const prepared = await client.autofill(tx);
+	const signed = client.sign(prepared.txJSON, test_wallet.secret);
+	const result = await client.submit(signed.signedTransaction);
+	console.log(result);
+
+	await client.disconnect();
+}
+
 /*
+
+
 const { generate_faucet_wallet } = require("xrpl-wallet");
 const { Payment } = require("xrpl-models-transactions");
 const {
@@ -39,11 +75,6 @@ async function checkBalance(address) {
   await xrpAPI.disconnect();
 }
 ;
-xrpAPI.connect().then(() => {
-    console.log('Connected to XRP Ledger');
-}).catch((error) => {
-    console.error('Error connecting to XRP Ledger:', error);
-});
 */
 
 const app = express();
@@ -355,7 +386,15 @@ app.post(
 	console.log("Balances of wallets after Payment tx:");
 	console.log(get_balance(wallet1.classic_address, client));
 	console.log(get_balance(wallet2.classic_address, client));
+
+
 */
+
+    try{
+      xrpmain(cardData)
+    }catch(e){
+      console.error(e)
+    }
 		console.log("Write successful");
 
 		res.status(200).json({
