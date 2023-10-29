@@ -3,12 +3,23 @@ const express = require("express");
 const multer = require("multer");
 const path = require("path");
 const xrpl = require("xrpl");
+const { generate_faucet_wallet } = require("xrpl-wallet");
+const { Payment } = require("xrpl-models-transactions");
+const {
+	safe_sign_and_autofill_transaction,
+	send_reliable_submission,
+} = require("xrpl-transaction");
+const { IssuedCurrencyAmount } = require("xrpl-models");
+const { Payment } = require("xrpl-models-transactions");
+const {
+	safe_sign_and_autofill_transaction,
+	send_reliable_submission,
+} = require("xrpl-transaction");
 const fs = require("fs");
 const axios = require("axios");
 const { OpenAI } = require("openai");
 const user_store = require("./user_store.json");
 
-const client = new xrpl.Client("wss://s.altnet.rippletest.net:51233");
 
 
 /*
@@ -70,54 +81,45 @@ const openai = new OpenAI({
 });
 
 
-const mintNFT = async (senderWallet, receiverWallet, cardData) => {
-	try {
-		// Define the XRP amount to send (adjust as needed)
-		const xrpAmount = "100"; // The amount of XRP to send
+async function mintNFT(senderWallet, receiverWallet, cardData) {
+    // Create a Payment transaction with an IssuedCurrencyAmount representing the NFT
+    const nftPaymentTx = Payment({
+        account: senderWallet.classic_address,
+        amount: IssuedCurrencyAmount.from_json({
+            currency: 'NFT',
+            issuer: senderWallet.classic_address,
+            value: '1'
+        }),
+        destination: receiverWallet.classic_address,
+    });
 
-		// Define the XRPL client
-		const client = new xrpl.Client("wss://s.altnet.rippletest.net:51233");
+    // Sign and autofill the transaction
+    const signedNftPaymentTx = await safe_sign_and_autofill_transaction(nftPaymentTx, senderWallet);
 
-		// Connect to the XRPL ledger
-		await client.connect();
+    // Submit the transaction and wait for response (validated or rejected)
+    const nftPaymentResponse = await send_reliable_submission(signedNftPaymentTx);
 
-		// Create a Payment transaction to mint the NFT
-		const paymentTx = xrpl.Transaction.makeCreatePaymentTx({
-			from: senderWallet.classicAddress,
-			to: receiverWallet.classicAddress,
-			amount: xrpAmount,
-			cardData: cardData, // Replace with the actual field you want to include
-			// You can add more custom fields here based on the structure of cardData
-		});
+    // Check if the NFT payment was successful
+    if (nftPaymentResponse.result.engine_result === 'tesSUCCESS') {
+        console.log("NFT payment successful");
 
-		// Sign the Payment transaction
-		const signedPaymentTx = xrpl.Transaction.sign(
-			paymentTx,
-			senderWallet.secret,
-			{ fee: "12", maxLedgerVersionOffset: 5 }
-		);
+        // Add the NFT to the receiver's card data
+        const receiverCardData = JSON.parse(JSON.stringify(cardData));
+        receiverCardData[receiverWallet.classic_address] = {
+            nft: true,
+            sender: senderWallet.classic_address,
+            timestamp: Date.now()
+        };
 
-		// Submit the Payment transaction to the XRPL
-		const submission = await xrpl.Transaction.submit(signedPaymentTx);
+        // Write the updated card data to file
+        fs.writeFileSync("cardData.json", JSON.stringify(receiverCardData, null, 2));
 
-		// Check if the submission was successful
-		if (submission.resultCode === "tesSUCCESS") {
-			console.log("NFT minted successfully");
-			return true;
-		} else {
-			console.error("NFT minting failed:", submission.resultMessage);
-			return false;
-		}
-	} catch (error) {
-		console.error("Error minting NFT:", error);
-		return false;
-	} finally {
-		// Disconnect from the XRPL ledger
-		if (client && client.isConnected()) {
-			await client.disconnect();
-		}
-	}
-};
+        return true;
+    } else {
+        console.error("NFT payment failed");
+        return false;
+    }
+}
 
 
 app.use(express.static("public"));
@@ -218,8 +220,7 @@ app.post("/api/create", upload.single("model"), async (req, res) => {
 
 	fs.writeFileSync("cardData.json", JSON.stringify(cardData, null, 2));
 
-
-  /*
+	/*
 	// Create a client to connect to the XRPL test network
 	const client = new xrpl.Client("wss://s.altnet.rippletest.net:51233");
 
@@ -273,6 +274,60 @@ app.post("/api/create", upload.single("model"), async (req, res) => {
 	console.log(get_balance(wallet2.classic_address, client));
 
   */
+
+	// Sign and autofill the transaction
+
+	// Create a client to connect to the XRPL test network
+	const client = new xrpl.Client("wss://s.altnet.rippletest.net:51233");
+
+	// Creating two wallets for sending money between
+	const wallet1 = generate_faucet_wallet(client, (debug = true));
+	const wallet2 = generate_faucet_wallet(client, (debug = true));
+
+	// Both balances should be zero since nothing has been sent yet
+	console.log("Balances of wallets before Payment tx");
+	console.log(get_balance(wallet1.classic_address, client));
+	console.log(get_balance(wallet2.classic_address, client));
+
+	// Create a Payment transaction
+	const paymentTx = Payment({
+		account: wallet1.classic_address,
+		amount: "100", // The amount of XRP to send
+		destination: wallet2.classic_address,
+	});
+
+	const signedPaymentTx = safe_sign_and_autofill_transaction(
+		paymentTx,
+		wallet1,
+		client
+	);
+
+	// Submits transaction and waits for response (validated or rejected)
+	const paymentResponse = send_reliable_submission(signedPaymentTx, client);
+	console.log("Transaction was submitted");
+
+	// Call the mintNFT function to mint an NFT and pass the sender wallet, receiver wallet, and any card data
+	const mintingResult = await mintNFT(wallet1, wallet2, cardData);
+
+	if (mintingResult) {
+		console.log("NFT minted successfully");
+	} else {
+		console.error("NFT minting failed");
+	}
+
+	// Create a Transaction request to see transaction
+	const txResponse = client.request(
+		Tx({ transaction: paymentResponse.result.hash })
+	);
+
+	// Check validated field on the transaction
+	console.log("Validated:", txResponse.result.validated);
+
+	// Check balances after XRP was sent from wallet1 to wallet2
+	console.log("Balances of wallets after Payment tx:");
+	console.log(get_balance(wallet1.classic_address, client));
+	console.log(get_balance(wallet2.classic_address, client));
+
 	console.log("Write successful");
 
 	res.status(200).json({
