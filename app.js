@@ -107,8 +107,9 @@ app.post("/api/create", upload.single("model"), async (req, res) => {
         console.log(formattedMovesetString)
 
 
-        suffix = cardData.length;
+        let suffix = cardData.keys(obj).length;
         newCardName = `${name}_${suffix}`
+
         const newCard = {
             cardName: newCardName,
             modelPath:`models/${filePath}`,
@@ -130,7 +131,7 @@ app.post("/api/create", upload.single("model"), async (req, res) => {
         res.status(201).json({
             message: "File uploaded successfully",
             fileName: req.file.filename,
-            description: newCard.description,
+            moveset: newCard.moveset,
         });
     } catch (error) {
         console.error("Error uploading file:", error);
