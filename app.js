@@ -6,11 +6,40 @@ const xrpl = require("xrpl");
 const fs = require("fs");
 const axios = require("axios");
 const { OpenAI } = require("openai");
+const user_store = require("./user_store.json");
+const RippleAPI = require('ripple-lib').RippleAPI;
+const private_key = 'secret_key';  
+const xrpAPI = new RippleAPI({
+    server: 'wss://s1.ripple.com' 
+})
 
+async function checkBalance(address) {
+  await xrpAPI.connect();
+  
+  const info = await xrpAPI.getAccountInfo(address);
+  console.log(info);
+  await xrpAPI.disconnect();
+}
+;
+xrpAPI.connect().then(() => {
+    console.log('Connected to XRP Ledger');
+}).catch((error) => {
+    console.error('Error connecting to XRP Ledger:', error);
+});
 
 const app = express();
 const PORT = 3000;
 
+const generateXRPAddress = async () => {
+    try {
+        const wallet = xrpAPI.generateAddress();  
+        return wallet;
+    } catch (error) {
+        console.error('Error generating XRP address:', error);
+        return null;
+    }
+};
+const my_wallet = xrpAPI.generateAddress();
 
 const storage = multer.diskStorage({
 	destination: (req, file, cb) => {
@@ -59,29 +88,19 @@ app.get("/api/card/:cardKey", (req, res) => {
 		let cardData = [];
 
     try {
-		  console.log("Reading cardData.json");
-		  cardData = JSON.parse(fs.readFileSync("cardData.json"));
-      console.log(cardData)
-	  } catch (err) {
-		  console.error("Error reading cardData.json:", err);
+ 
+        const cardData = require("./cardData.json"); 
 
-		  res.status(500).json({ message: "Error reading" });
-	  }
-		// Check if the cardKey exists in the cardData object
-
-    console.log("Checking if card exists")
-    console.log(cardData.cardKey)
-    console.log(cardData[cardKey])
-
-		if (cardData.hasOwnProperty(cardKey)) {
-			const card = cardData[cardKey];
-			res.status(200).json(card);
-		} else {
-			res.status(404).json({ message: "Card not found" });
-		}
-	} catch (err) {
-		res.status(500).json({ message: "Error reading card data" });
-	}
+         if (cardData.hasOwnProperty(cardName)) {
+            const card = cardData[cardName];
+            res.status(200).json(card);
+        } else {
+            res.status(404).json({ message: "Card not found" });
+        }
+    } catch (err) {
+        res.status(500).json({ message: "Error reading card data" });
+    }
+ 
 });
 
 
@@ -94,7 +113,7 @@ app.post("/api/create", upload.single("model"), async (req, res) => {
             return res.status(400).json({ message: "No file uploaded" });
         }
 
-        const { name } = req.body;
+        const { name,userid } = req.body;
         const filePath = req.file.filename;
 
         console.log("File uploaded: ", filePath)
@@ -144,18 +163,36 @@ app.post("/api/create", upload.single("model"), async (req, res) => {
         
         fs.writeFileSync("cardData.json", JSON.stringify(cardData, null, 2));
 
+ 
+        const xrpAddress = user_store[userid].xrpAddress ; 
+        const xrpAmount = '10'; 
+        const payment = {
+            source: {
+                address:my_wallet, 
+                maxAmount: {
+                    value: xrpAmount,
+                    currency: 'XRP'
+                }
+            },
+            destination: {
+                address: xrpAddress,
+                amount: {
+                    value: xrpAmount,
+                    currency: 'XRP'
+                }
+            }
+        };
+
+     
+        const preparedPayment = await xrpAPI.preparePayment(my_wallet, payment);
+        const signedPayment = xrpAPI.sign(preparedPayment, private_key); 
+        const result = await xrpAPI.submit(signedPayment.signedTransaction);
+        console.log('XRP Transaction Result:', result);
+ 
         console.log("Write successful")
 
 
-        res.status(201).json({
-            message: "File uploaded successfully",
-            fileName: req.file.filename,
-            moveset: newCard.moveset,
-        });
-    } catch (error) {
-        console.error("Error uploading file:", error);
-        res.status(500).json({ message: "Error uploading file" });
-    }
+ 
 });
 
 
@@ -187,6 +224,33 @@ async function generateMoveset(name) {
 		return "Description not available";
 	}
 }
+app.post('/api/create-address', async (req, res) => {
+    try {
+        const { userId } = req.body;  
+
+        
+
+        const xrpAddress = await generateXRPAddress();
+        const username = user_store[userId].username;
+        user_store[userId]={}
+        user_store[userId].xrpAddress = xrpAddress;
+
+        if (!xrpAddress) {
+            return res.status(500).json({ message: 'Error generating XRP address' });
+        }
+ 
+
+        res.status(201).json({
+            message: 'XRP address created and assigned to the user',
+            userId,
+            username,
+            xrpAddress,
+        });
+    } catch (error) {
+        console.error('Error creating and assigning XRP address:', error);
+        res.status(500).json({ message: 'Error creating and assigning XRP address' });
+    }
+});
 
 app.listen(PORT, () => {
 	console.log(`Server started on port ${PORT}`);
