@@ -84,7 +84,7 @@ app.get("/api/card/:cardKey", (req, res) => {
 		return res.status(400).json({ message: "Missing cardKey parameter" });
 	}
 
-	try {
+	 
 		let cardData = [];
 
     try {
@@ -106,7 +106,7 @@ app.get("/api/card/:cardKey", (req, res) => {
 
 
 app.post("/api/create", upload.single("model"), async (req, res) => {
-    try {
+
         console.log("Recieved Post request");
         if (!req.file) {
             console.log("No file!")
