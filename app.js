@@ -187,13 +187,14 @@ app.post(
 		const { name, userid } = req.body;
 
     
-    const imageFilePath = imageFile.path;
-	  const modelFilePath = modelFile.path;
+    const imageFilePath = imageFile["path"];
+	  const modelFilePath = modelFile["path"];
 
-		console.log("Image file uploaded: ", imageFile.filename);
-		console.log("3D model file uploaded: ", modelFile.filename);
+		console.log("Image file uploaded: ", imageFilePath);
+		console.log("3D model file uploaded: ", modelFilePath);
 
 		let cardData = [];
+
 		try {
 			console.log("Reading cardData.json");
 			cardData = JSON.parse(fs.readFileSync("cardData.json"));
