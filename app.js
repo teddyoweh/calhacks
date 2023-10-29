@@ -8,6 +8,7 @@ const fs = require("fs");
 const axios = require("axios");
 const { OpenAI } = require("openai");
 const user_store = require("./user_store.json");
+
 /*
 const { generate_faucet_wallet } = require("xrpl-wallet");
 const { Payment } = require("xrpl-models-transactions");
@@ -20,9 +21,9 @@ const { Payment } = require("xrpl-models-transactions");
 const {
 	safe_sign_and_autofill_transaction,
 	send_reliable_submission,
-} = require("xrpl-transaction");*/
+} = require("xrpl-transaction");
 
-
+*/
 /*
 const RippleAPI = require('ripple-lib').RippleAPI;
 const private_key = 'secret_key';  
@@ -81,8 +82,8 @@ const openai = new OpenAI({
 	apiKey,
 });
 
-/*
-async function mintNFT(senderWallet, receiverWallet, cardData) {
+
+/*async function mintNFT(senderWallet, receiverWallet, cardData) {
     // Create a Payment transaction with an IssuedCurrencyAmount representing the NFT
     const nftPaymentTx = Payment({
         account: senderWallet.classic_address,
@@ -168,60 +169,70 @@ app.get("/api/card/:cardKey", (req, res) => {
 
 
 
-app.post("/api/create", upload.single("model"), async (req, res) => {
-	console.log("Recieved Post request");
-	if (!req.file) {
-		console.log("No file!");
-		return res.status(400).json({ message: "No file uploaded" });
+app.post(
+	"/api/create",
+	upload.fields([{ name: "image" }, { name: "model" }]),
+	async (req, res) => {
+		console.log("Recieved Post request");
+
+    const imageFile = req.files["image"][0];
+	  const modelFile = req.files["model"][0];
+
+    if (!imageFile || !modelFile) {
+		console.log("One or both files missing!");
+		return res.status(400).json({ message: "One or both files missing" });
 	}
+		const { name, userid } = req.body;
+		const filePath = req.file.filename;
+    const imageFilePath = imageFile.path;
+	  const modelFilePath = modelFile.path;
 
-	const { name, userid } = req.body;
-	const filePath = req.file.filename;
+		console.log("Image file uploaded: ", imageFile.filename);
+		console.log("3D model file uploaded: ", modelFile.filename);
 
-	console.log("File uploaded: ", filePath);
+		let cardData = [];
+		try {
+			console.log("Reading cardData.json");
+			cardData = JSON.parse(fs.readFileSync("cardData.json"));
+		} catch (err) {
+			console.error("Error reading cardData.json:", err);
 
-	let cardData = [];
-	try {
-		console.log("Reading cardData.json");
-		cardData = JSON.parse(fs.readFileSync("cardData.json"));
-	} catch (err) {
-		console.error("Error reading cardData.json:", err);
+			res.status(500).json({ message: "Error uploading reading file" });
+		}
 
-		res.status(500).json({ message: "Error uploading reading file" });
-	}
+		console.log(cardData);
 
-	console.log(cardData);
+		const moveset = await generateMoveset(name);
 
-	const moveset = await generateMoveset(name);
+		console.log(moveset);
 
-	console.log(moveset);
+		movesetParse = JSON.parse(moveset);
 
-	movesetParse = JSON.parse(moveset);
+		console.log(movesetParse);
 
-	console.log(movesetParse);
+		const formattedMovesetString = JSON.stringify(moveset, null, 2);
 
-	const formattedMovesetString = JSON.stringify(moveset, null, 2);
+		console.log(formattedMovesetString);
 
-	console.log(formattedMovesetString);
+		console.log(cardData.toString);
 
-	console.log(cardData.toString);
+		let suffix = Object.keys(cardData).length;
+		newCardName = `${name}_${suffix}`;
 
-	let suffix = Object.keys(cardData).length;
-	newCardName = `${name}_${suffix}`;
+		const newCard = {
+			cardName: name,
+			modelPath: `models/${modelFilePath}`,
+      imagePath: `models/${imageFilePath}`,
+			moveset: movesetParse,
+		};
 
-	const newCard = {
-		cardName: name,
-		modelPath: `models/${filePath}`,
-		moveset: movesetParse,
-	};
+		cardData[newCardName] = newCard;
 
-	cardData[newCardName] = newCard;
+		console.log("Adding new card to cardData.json: ", newCard);
 
-	console.log("Adding new card to cardData.json: ", newCard);
+		fs.writeFileSync("cardData.json", JSON.stringify(cardData, null, 2));
 
-	fs.writeFileSync("cardData.json", JSON.stringify(cardData, null, 2));
-
-	/*
+		/*
 	// Create a client to connect to the XRPL test network
 	const client = new xrpl.Client("wss://s.altnet.rippletest.net:51233");
 
@@ -276,8 +287,8 @@ app.post("/api/create", upload.single("model"), async (req, res) => {
 
   */
 
-	// Sign and autofill the transaction
-    /*
+		// Sign and autofill the transaction
+		/*
 	// Create a client to connect to the XRPL test network
 	const client = new xrpl.Client("wss://s.altnet.rippletest.net:51233");
 
@@ -329,12 +340,13 @@ app.post("/api/create", upload.single("model"), async (req, res) => {
 	console.log(get_balance(wallet1.classic_address, client));
 	console.log(get_balance(wallet2.classic_address, client));
 */
-	console.log("Write successful");
+		console.log("Write successful");
 
-	res.status(200).json({
-		message: "File uploaded and data written successfully",
-	});
-});
+		res.status(200).json({
+			message: "File uploaded and data written successfully",
+		});
+	}
+);
 
 
 async function generateMoveset(name) {
