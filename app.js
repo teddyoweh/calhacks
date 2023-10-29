@@ -109,7 +109,6 @@ app.post("/api/create", upload.single("model"), async (req, res) => {
 
         suffix = cardData.length;
         newCardName = `${name}_${suffix}`
-        
         const newCard = {
             cardName: newCardName,
             modelPath:`models/${filePath}`,
