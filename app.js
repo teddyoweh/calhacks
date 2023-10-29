@@ -49,6 +49,8 @@ app.get("/api/get-cards", (req, res) => {
 app.get("/api/card/:cardKey", (req, res) => {
 	const cardKey = req.params.cardKey; // Retrieve card key from the route parameter
 
+  console.log("Retrieving card: ", cardKey)
+
 	if (!cardKey) {
 		return res.status(400).json({ message: "Missing cardKey parameter" });
 	}
@@ -59,12 +61,18 @@ app.get("/api/card/:cardKey", (req, res) => {
     try {
 		  console.log("Reading cardData.json");
 		  cardData = JSON.parse(fs.readFileSync("cardData.json"));
+      console.log(cardData)
 	  } catch (err) {
 		  console.error("Error reading cardData.json:", err);
 
 		  res.status(500).json({ message: "Error reading" });
 	  }
 		// Check if the cardKey exists in the cardData object
+
+    console.log("Checking if card exists")
+    console.log(cardData.cardKey)
+    console.log(cardData[cardKey])
+
 		if (cardData.hasOwnProperty(cardKey)) {
 			const card = cardData[cardKey];
 			res.status(200).json(card);
