@@ -166,65 +166,59 @@ app.get("/api/card/:cardKey", (req, res) => {
 
 
 app.post("/api/create", upload.single("model"), async (req, res) => {
+	console.log("Recieved Post request");
+	if (!req.file) {
+		console.log("No file!");
+		return res.status(400).json({ message: "No file uploaded" });
+	}
 
-        console.log("Recieved Post request");
-        if (!req.file) {
-            console.log("No file!")
-            return res.status(400).json({ message: "No file uploaded" });
-        }
+	const { name, userid } = req.body;
+	const filePath = req.file.filename;
 
-        const { name,userid } = req.body;
-        const filePath = req.file.filename;
+	console.log("File uploaded: ", filePath);
 
-        console.log("File uploaded: ", filePath)
-        
-        let cardData = [];
-        try {
-            console.log("Reading cardData.json")
-            cardData = JSON.parse(fs.readFileSync("cardData.json"));
+	let cardData = [];
+	try {
+		console.log("Reading cardData.json");
+		cardData = JSON.parse(fs.readFileSync("cardData.json"));
+	} catch (err) {
+		console.error("Error reading cardData.json:", err);
 
-        } catch (err) {
-            console.error("Error reading cardData.json:", err);
+		res.status(500).json({ message: "Error uploading reading file" });
+	}
 
-            res.status(500).json({ message: "Error uploading reading file" });
-        }
+	console.log(cardData);
 
-        console.log(cardData)
+	const moveset = await generateMoveset(name);
 
+	console.log(moveset);
 
-        const moveset = await generateMoveset(name);
+	movesetParse = JSON.parse(moveset);
 
-        console.log(moveset);
+	console.log(movesetParse);
 
-        movesetParse = JSON.parse(moveset);
+	const formattedMovesetString = JSON.stringify(moveset, null, 2);
 
-        console.log(movesetParse)
+	console.log(formattedMovesetString);
 
-        const formattedMovesetString = JSON.stringify(moveset, null, 2);
+	console.log(cardData.toString);
 
-        console.log(formattedMovesetString)
+	let suffix = Object.keys(cardData).length;
+	newCardName = `${name}_${suffix}`;
 
-        console.log(cardData.toString)
+	const newCard = {
+		cardName: name,
+		modelPath: `models/${filePath}`,
+		moveset: movesetParse,
+	};
 
-        let suffix = Object.keys(cardData).length;
-		    newCardName = `${name}_${suffix}`;
+	cardData[newCardName] = newCard;
 
-        const newCard = {
-            cardName: name,
-            modelPath:`models/${filePath}`,
-            moveset:movesetParse,
-        }
+	console.log("Adding new card to cardData.json: ", newCard);
 
+	fs.writeFileSync("cardData.json", JSON.stringify(cardData, null, 2));
 
-        
-        cardData[newCardName] = newCard;
-
-        console.log("Adding new card to cardData.json: ", newCard);
-
-        
-        fs.writeFileSync("cardData.json", JSON.stringify(cardData, null, 2));
-
-        /*
+	/*
         const xrpAddress = user_store[userid].xrpAddress ; 
         const xrpAmount = '10'; 
         const payment = {
@@ -251,25 +245,63 @@ app.post("/api/create", upload.single("model"), async (req, res) => {
         console.log('XRP Transaction Result:', result);
         */
 
-        const senderWallet = generateWallet(); // Replace with your wallet generation logic
-		    const receiverWallet = generateWallet(); // Replace with your wallet generation logic
-		    const mintingResult = await mintNFT(
-		    	senderWallet,
-		    	receiverWallet,
-		    	newCard
-		    );
-        
-		    if (mintingResult) {
-		    	console.log("NFT minted successfully");
-		    } else {
-		    	console.error("NFT minting failed");
-		    }
-        console.log("Write successful")
+	// Create a client to connect to the XRPL test network
+	const client = new xrpl.Client("wss://s.altnet.rippletest.net:51233");
 
-        res.status(200).json({
-			message: "File uploaded and data written successfully",
-		});
- 
+	// Creating two wallets for sending money between
+	const wallet1 = generate_faucet_wallet(client, (debug = true));
+	const wallet2 = generate_faucet_wallet(client, (debug = true));
+
+	// Both balances should be zero since nothing has been sent yet
+	console.log("Balances of wallets before Payment tx");
+	console.log(get_balance(wallet1.classic_address, client));
+	console.log(get_balance(wallet2.classic_address, client));
+
+	// Create a Payment transaction
+	const paymentTx = Payment({
+		account: wallet1.classic_address,
+		amount: "100", // The amount of XRP to send
+		destination: wallet2.classic_address,
+	});
+
+	// Sign and autofill the transaction
+	const signedPaymentTx = safe_sign_and_autofill_transaction(
+		paymentTx,
+		wallet1,
+		client
+	);
+
+	// Submits transaction and waits for response (validated or rejected)
+	const paymentResponse = send_reliable_submission(signedPaymentTx, client);
+	console.log("Transaction was submitted");
+
+	// Call the mintNFT function to mint an NFT and pass the sender wallet, receiver wallet, and any card data
+	const mintingResult = await mintNFT(wallet1, wallet2, cardData);
+
+	if (mintingResult) {
+		console.log("NFT minted successfully");
+	} else {
+		console.error("NFT minting failed");
+	}
+
+	// Create a Transaction request to see transaction
+	const txResponse = client.request(
+		Tx({ transaction: paymentResponse.result.hash })
+	);
+
+	// Check validated field on the transaction
+	console.log("Validated:", txResponse.result.validated);
+
+	// Check balances after XRP was sent from wallet1 to wallet2
+	console.log("Balances of wallets after Payment tx:");
+	console.log(get_balance(wallet1.classic_address, client));
+	console.log(get_balance(wallet2.classic_address, client));
+
+	console.log("Write successful");
+
+	res.status(200).json({
+		message: "File uploaded and data written successfully",
+	});
 });
 
 
