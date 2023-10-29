@@ -34,7 +34,7 @@ extension Card {
         }
         
         if let imagePath = try container.decodeIfPresent(String.self, forKey: .imagePath) {
-            self.imagePath = modelPath
+            self.imagePath = imagePath
         } else {
             self.imagePath = ""
         }
@@ -158,19 +158,20 @@ extension Card {
     )
 
     static let card2 = Card(
-        id: "Apple",
-        cardName: "Apple",
-        modelPath: "models/A413388B-8166-4B64-95EE-8698F5ABB57A.usdz",
+        id: "Fuji Apple_23",
+        cardName: "Fuji Apple",
+        modelPath: "models/E84B5E6A-8E4E-4489-BC8A-B08CB98B753E.usdz",
+        imagePath: "models/88A0D05F-3370-4C50-8744-A4FB18BA763D.png",
         moveset: Moveset(
             moveOne: Move(
-                name: "Bite",
+                name: "Apple Crunch",
                 damage: 15,
-                moveDescription: "Take a crunchy bite out of your opponent."
+                moveDescription: "Take a big bite out of your opponent, leaving them with a sour taste!"
             ),
             moveTwo: Move(
-                name: "Exploding Cider",
+                name: "Orchard Slam",
                 damage: 20,
-                moveDescription: "Unleash a fiery explosion of apple goodness."
+                moveDescription: "Summon a barrage of apples from the heavens to pummel your foe into submission!"
             )
         )
     )

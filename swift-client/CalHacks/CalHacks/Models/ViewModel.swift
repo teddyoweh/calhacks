@@ -20,9 +20,9 @@ enum Tab {
 class ViewModel: NSObject, ObservableObject {
     @Published var entered = false
     @Published var selectedTab = Tab.cards
-    @Published var cards = [Card.card1]
-    @Published var cardsStore = [Card.card2]
-    @Published var selectedCard: Card? = Card.card1
+    @Published var cards = [Card.card2]
+    @Published var cardsStore = [Card.card1]
+    @Published var selectedCard: Card? = Card.card2
 
     @Published var finishedScanURL: URL?
 

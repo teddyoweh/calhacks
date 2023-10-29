@@ -5,9 +5,9 @@
 //  Created by Andrew Zheng on 10/28/23.
 //
 
-import SwiftUI
 import Alamofire
 import Files
+import SwiftUI
 
 struct CardsView: View {
     @ObservedObject var model: ViewModel
@@ -106,16 +106,17 @@ struct CardView: View {
                         .strokeBorder(color.color, lineWidth: 10)
                         .brightness(0.2)
                 }
-                .padding(.bottom, -32)
+                .padding(.bottom, -24)
                 .overlay {
                     if let image = imagePreview {
                         Image(uiImage: image)
                             .aspectRatio(contentMode: .fit)
-//                            .pad
+                            .shadow(color: .black.opacity(0.5), radius: 24, x: 0, y: 8)
+                            .offset(y: 40)
                     }
                 }
+                .zIndex(2)
                 
-            
             VStack(alignment: .leading, spacing: 12) {
                 Text(card.cardName)
                     .font(.title)
@@ -178,11 +179,15 @@ struct CardView: View {
                 )
                 .brightness(-0.15)
                 .mask {
+                    RoundedRectangle(cornerRadius: 16)
+                }
+                .mask {
                     SlantShape(tlOffset: 32)
                 }
                 .shadow(color: .white.opacity(0.2), radius: 24, x: 0, y: 0)
                 .padding(.top, -32)
             }
+            .zIndex(4)
         }
         .background {
             LinearGradient(
@@ -193,9 +198,9 @@ struct CardView: View {
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
-        }
-        .mask {
-            RoundedRectangle(cornerRadius: 16)
+            .mask {
+                RoundedRectangle(cornerRadius: 16)
+            }
         }
     }
     
