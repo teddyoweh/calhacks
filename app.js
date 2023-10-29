@@ -4,7 +4,6 @@ const multer = require("multer");
 const path = require("path");
 const xrpl = require("xrpl");
 const { generate_faucet_wallet } = require("xrpl-wallet");
-const { Payment } = require("xrpl-models-transactions");
 const {
 	safe_sign_and_autofill_transaction,
 	send_reliable_submission,
