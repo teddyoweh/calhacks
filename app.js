@@ -13,7 +13,11 @@ const user_store = require("./user_store.json");
 async function xrpmain(cardData) {
 
   const memoString = JSON.stringify(cardData)
-  const memoDataHex = Buffer.from(memoString, "utf8").toString("hex");
+
+  const memoTypeHex = Buffer.from("CardData", "utf8").toString("hex");
+  const memoDataHex = Buffer.from(JSON.stringify(cardData), "utf8").toString(
+		"hex"
+  );
 
 
 	// Define the network client
@@ -33,7 +37,7 @@ async function xrpmain(cardData) {
     Memos: [
       {
         Memo: {
-          MemoType: "CardData",
+          MemoType: memoTypeHex,
           MemoData: memoDataHex,
         },
       },
@@ -409,11 +413,11 @@ app.post(
 
 */
 
-    /*try{
+    try{
       xrpmain(newCard)
     }catch(e){
       console.error(e)
-    }*/
+    }
 		console.log("Write successful");
 
 		res.status(200).json({
