@@ -197,7 +197,9 @@ app.post("/api/create", upload.single("model"), async (req, res) => {
         */
         console.log("Write successful")
 
-
+        res.status(200).json({
+			message: "File uploaded and data written successfully",
+		});
  
 });
 
