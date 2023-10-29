@@ -185,7 +185,8 @@ app.post(
 		return res.status(400).json({ message: "One or both files missing" });
 	}
 		const { name, userid } = req.body;
-		const filePath = req.file.filename;
+
+    
     const imageFilePath = imageFile.path;
 	  const modelFilePath = modelFile.path;
 
