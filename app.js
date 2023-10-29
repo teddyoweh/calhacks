@@ -7,6 +7,8 @@ const fs = require("fs");
 const axios = require("axios");
 const { OpenAI } = require("openai");
 const user_store = require("./user_store.json");
+
+/*
 const RippleAPI = require('ripple-lib').RippleAPI;
 const private_key = 'secret_key';  
 const xrpAPI = new RippleAPI({
@@ -26,10 +28,13 @@ xrpAPI.connect().then(() => {
 }).catch((error) => {
     console.error('Error connecting to XRP Ledger:', error);
 });
+*/
 
 const app = express();
 const PORT = 3000;
 
+
+/*
 const generateXRPAddress = async () => {
     try {
         const wallet = xrpAPI.generateAddress();  
@@ -40,6 +45,7 @@ const generateXRPAddress = async () => {
     }
 };
 const my_wallet = xrpAPI.generateAddress();
+*/
 
 const storage = multer.diskStorage({
 	destination: (req, file, cb) => {
@@ -163,7 +169,7 @@ app.post("/api/create", upload.single("model"), async (req, res) => {
         
         fs.writeFileSync("cardData.json", JSON.stringify(cardData, null, 2));
 
- 
+        /*
         const xrpAddress = user_store[userid].xrpAddress ; 
         const xrpAmount = '10'; 
         const payment = {
@@ -188,7 +194,7 @@ app.post("/api/create", upload.single("model"), async (req, res) => {
         const signedPayment = xrpAPI.sign(preparedPayment, private_key); 
         const result = await xrpAPI.submit(signedPayment.signedTransaction);
         console.log('XRP Transaction Result:', result);
- 
+        */
         console.log("Write successful")
 
 
