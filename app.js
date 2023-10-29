@@ -8,6 +8,9 @@ const axios = require("axios");
 const { OpenAI } = require("openai");
 const user_store = require("./user_store.json");
 
+const client = new xrpl.Client("wss://s.altnet.rippletest.net:51233");
+
+
 /*
 const RippleAPI = require('ripple-lib').RippleAPI;
 const private_key = 'secret_key';  
@@ -65,6 +68,57 @@ const apiKey = process.env.OPENAI_KEY;
 const openai = new OpenAI({
 	apiKey,
 });
+
+
+const mintNFT = async (senderWallet, receiverWallet, cardData) => {
+	try {
+		// Define the XRP amount to send (adjust as needed)
+		const xrpAmount = "100"; // The amount of XRP to send
+
+		// Define the XRPL client
+		const client = new xrpl.Client("wss://s.altnet.rippletest.net:51233");
+
+		// Connect to the XRPL ledger
+		await client.connect();
+
+		// Create a Payment transaction to mint the NFT
+		const paymentTx = xrpl.Transaction.makeCreatePaymentTx({
+			from: senderWallet.classicAddress,
+			to: receiverWallet.classicAddress,
+			amount: xrpAmount,
+			cardData: cardData, // Replace with the actual field you want to include
+			// You can add more custom fields here based on the structure of cardData
+		});
+
+		// Sign the Payment transaction
+		const signedPaymentTx = xrpl.Transaction.sign(
+			paymentTx,
+			senderWallet.secret,
+			{ fee: "12", maxLedgerVersionOffset: 5 }
+		);
+
+		// Submit the Payment transaction to the XRPL
+		const submission = await xrpl.Transaction.submit(signedPaymentTx);
+
+		// Check if the submission was successful
+		if (submission.resultCode === "tesSUCCESS") {
+			console.log("NFT minted successfully");
+			return true;
+		} else {
+			console.error("NFT minting failed:", submission.resultMessage);
+			return false;
+		}
+	} catch (error) {
+		console.error("Error minting NFT:", error);
+		return false;
+	} finally {
+		// Disconnect from the XRPL ledger
+		if (client && client.isConnected()) {
+			await client.disconnect();
+		}
+	}
+};
+
 
 app.use(express.static("public"));
 
@@ -151,7 +205,7 @@ app.post("/api/create", upload.single("model"), async (req, res) => {
         console.log(formattedMovesetString)
 
         console.log(cardData.toString)
-        
+
         let suffix = Object.keys(cardData).length;
 		    newCardName = `${name}_${suffix}`;
 
@@ -196,6 +250,20 @@ app.post("/api/create", upload.single("model"), async (req, res) => {
         const result = await xrpAPI.submit(signedPayment.signedTransaction);
         console.log('XRP Transaction Result:', result);
         */
+
+        const senderWallet = generateWallet(); // Replace with your wallet generation logic
+		    const receiverWallet = generateWallet(); // Replace with your wallet generation logic
+		    const mintingResult = await mintNFT(
+		    	senderWallet,
+		    	receiverWallet,
+		    	newCard
+		    );
+        
+		    if (mintingResult) {
+		    	console.log("NFT minted successfully");
+		    } else {
+		    	console.error("NFT minting failed");
+		    }
         console.log("Write successful")
 
         res.status(200).json({
