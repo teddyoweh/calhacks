@@ -1,0 +1,18 @@
+{
+  "Pumpkin":{
+    "cardName": "Pumpkin",
+    "modelPath": "models/pumpkin",
+    "moveset":{
+      "moveOne": {
+        "name": "Gourd Slam",
+        "damage": 20,
+        "moveDescription": "The Pumpkin character slams a giant gourd onto the opponent, causing substantial damage."
+      },
+      "moveTwo": {
+        "name": "Jack-o'-Smash",
+        "damage": 25,
+        "moveDescription": "The Pumpkin character transforms into a giant jack-o'-lantern and smashes into the opponent, dealing massive damage."
+      }
+    }
+  }
+}

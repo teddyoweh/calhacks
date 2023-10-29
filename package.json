@@ -3,8 +3,9 @@
   "version": "1.0.0",
   "description": "code",
   "main": "app.js",
+  "type": "commonjs",
   "scripts": {
-    "test": "start"
+    "dev": "start"
   },
   "repository": {
     "type": "git",
@@ -18,6 +19,8 @@
     "express": "^4.18.2",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^7.6.3",
-    "nodemon": "^3.0.1"
+    "multer": "^1.4.5-lts.1",
+    "nodemon": "^3.0.1",
+    "openai": "^4.14.1"
   }
 }

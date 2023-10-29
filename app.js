@@ -1,67 +1,73 @@
-import express from "express";
-import multer from "multer";
-import path from "path";
-import fs from "fs";
-import axios from "axios";
-import OpenAI from "openai"; // Import OpenAI module as specified
+require("dotenv").config();
+const express = require("express");
+const multer = require("multer");
+const path = require("path");
+const fs = require("fs");
+const axios = require("axios");
+const { OpenAI } = require("openai");
+
 
 const app = express();
 const PORT = 3000;
 
-// Configure multer to store uploaded files in the "models" directory
+
 const storage = multer.diskStorage({
 	destination: (req, file, cb) => {
-		cb(null, "models"); // Store files in the "models" directory
+		cb(null, "models"); 
 	},
 	filename: (req, file, cb) => {
 		const extname = path.extname(file.originalname);
-		const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-		cb(null, file.fieldname + "-" + uniqueSuffix + extname);
+		cb(null, file.fieldname + extname);
 	},
 });
 
 const upload = multer({ storage: storage });
 
-// Your OpenAI GPT-3.5 Turbo API key
-const apiKey = "YOUR_OPENAI_API_KEY"; // Replace with your API key
 
-// Create an OpenAI client
+const apiKey = process.env.OPENAI_KEY; 
+
+
 const openai = new OpenAI({
 	apiKey,
 });
 
 app.post("/api/create", upload.single("model"), async (req, res) => {
-	try {
-		if (!req.file) {
-			return res.status(400).json({ message: "No file uploaded" });
-		}
+    try {
+        if (!req.file) {
+            return res.status(400).json({ message: "No file uploaded" });
+        }
 
-		const { name } = req.body;
-		const filePath = req.file.filename;
+        const { name } = req.body;
+        const filePath = req.file.filename;
 
-		// Create an object with the card name and file path
-		const cardData = { name, filePath };
+        
+        let cardData = [];
+        try {
+            cardData = JSON.parse(fs.readFileSync("cardData.json"));
+        } catch (err) {
+            
+        }
 
-		// Generate a description based on the name using GPT-3.5 Turbo
-		const moveset = await generateMoveset(name);
+        const moveset = await generateMoveset(name);
 
-		// Add the description to the cardData object
-		cardData.moveset = moveset;
+        const newCard = { name, filePath, moveset };
 
-		// Write the card data to a JSON file
-		fs.writeFileSync("cardData.json", JSON.stringify(cardData));
+        cardData.push(newCard);
 
-		res.status(201).json({
-			message: "File uploaded successfully",
-			fileName: req.file.filename,
-			description,
-		});
-	} catch (error) {
-		res.status(500).json({ message: "Error uploading file" });
-	}
+        
+        fs.writeFileSync("cardData.json", JSON.stringify(cardData));
+
+        res.status(201).json({
+            message: "File uploaded successfully",
+            fileName: req.file.filename,
+            description: newCard.description,
+        });
+    } catch (error) {
+        res.status(500).json({ message: "Error uploading file" });
+    }
 });
 
-// Function to generate a moveset using GPT-3.5 Turbo
+
 async function generateMoveset(name) {
 	try {
 
@@ -81,7 +87,6 @@ async function generateMoveset(name) {
 			max_tokens: 500,
 			temperature: 0.9,
 		});
-		console.log(response.data.choices[0].message.content);
 
     return response.data.choices[0].message.content;
 	} catch (error) {
