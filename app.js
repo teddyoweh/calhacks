@@ -195,6 +195,12 @@ app.post(
     
     const imageFilePath = imageFile[0]["path"];
 	  const modelFilePath = modelFile[0]["path"];
+    const imageFilePathWithoutPublic = imageFilePath.substring(
+		"public/".length
+	);
+	const modelFilePathWithoutPublic = modelFilePath.substring(
+		"public/".length
+	);
 
 		console.log("Image file uploaded: ", imageFilePath);
 		console.log("3D model file uploaded: ", modelFilePath);
@@ -231,8 +237,8 @@ app.post(
 
 		const newCard = {
 			cardName: name,
-			modelPath: `models/${modelFilePath}`,
-      imagePath: `models/${imageFilePath}`,
+			modelPath: `${modelFilePathWithoutPublic}`,
+      imagePath: `${imageFilePathWithoutPublic}`,
 			moveset: movesetParse,
 		};
 
