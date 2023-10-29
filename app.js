@@ -2,6 +2,7 @@ require("dotenv").config();
 const express = require("express");
 const multer = require("multer");
 const path = require("path");
+const xrpl = require("xrpl");
 const fs = require("fs");
 const axios = require("axios");
 const { OpenAI } = require("openai");
@@ -106,15 +107,18 @@ app.post("/api/create", upload.single("model"), async (req, res) => {
         console.log(formattedMovesetString)
 
 
+        suffix = cardData.length;
+        newCardName = `${name}_${suffix}`
+        
         const newCard = {
-            cardName:`name_${cardData.length}`,
+            cardName: newCardName,
             modelPath:`models/${filePath}`,
             moveset:movesetParse,
         }
 
 
-
-        cardData[name] = newCard;
+        
+        cardData[newCardName] = newCard;
 
         console.log("Adding new card to cardData.json: ", newCard);
 
@@ -122,6 +126,7 @@ app.post("/api/create", upload.single("model"), async (req, res) => {
         fs.writeFileSync("cardData.json", JSON.stringify(cardData, null, 2));
 
         console.log("Write successful")
+
 
         res.status(201).json({
             message: "File uploaded successfully",
