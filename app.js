@@ -107,7 +107,7 @@ app.post("/api/create", upload.single("model"), async (req, res) => {
 
 
         const newCard = {
-            cardName:name,
+            cardName:`name_${cardData.length}`,
             modelPath:`models/${filePath}`,
             moveset:movesetParse,
         }
