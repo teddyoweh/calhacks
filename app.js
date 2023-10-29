@@ -54,8 +54,16 @@ app.get("/api/card/:cardKey", (req, res) => {
 	}
 
 	try {
-		const cardData = require("./cardData.json"); // Load the JSON file
+		let cardData = [];
 
+    try {
+		  console.log("Reading cardData.json");
+		  cardData = JSON.parse(fs.readFileSync("cardData.json"));
+	  } catch (err) {
+		  console.error("Error reading cardData.json:", err);
+
+		  res.status(500).json({ message: "Error reading" });
+	  }
 		// Check if the cardKey exists in the cardData object
 		if (cardData.hasOwnProperty(cardKey)) {
 			const card = cardData[cardKey];
