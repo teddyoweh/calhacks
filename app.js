@@ -177,8 +177,14 @@ app.post(
 
     console.log(req.files);
 
+
+
     const imageFile = req.files["image"];
 	  const modelFile = req.files["model"];
+
+    console.log(imageFile);
+    console.log(modelFile);
+
 
     if (!imageFile || !modelFile) {
 		console.log("One or both files missing!");
@@ -187,8 +193,8 @@ app.post(
 		const { name, userid } = req.body;
 
     
-    const imageFilePath = imageFile["path"];
-	  const modelFilePath = modelFile["path"];
+    const imageFilePath = imageFile[0]["path"];
+	  const modelFilePath = modelFile[0]["path"];
 
 		console.log("Image file uploaded: ", imageFilePath);
 		console.log("3D model file uploaded: ", modelFilePath);
