@@ -14,7 +14,7 @@ const PORT = 3000;
 
 const storage = multer.diskStorage({
 	destination: (req, file, cb) => {
-		cb(null, "models"); 
+		cb(null, "public/models"); 
 	},
     filename: (req, file, cb) => {
         cb(null, file.originalname); 
