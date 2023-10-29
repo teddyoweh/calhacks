@@ -11,6 +11,10 @@ const user_store = require("./user_store.json");
 
 
 async function xrpmain(cardData) {
+
+  const memoDataHex = Buffer.from(cardData, "utf8").toString("hex");
+
+
 	// Define the network client
 	const client = new xrpl.Client("wss://s.altnet.rippletest.net:51233");
 	await client.connect();
@@ -29,7 +33,7 @@ async function xrpmain(cardData) {
       {
         Memo: {
           MemoType: "CardData",
-          MemoData: cardData,
+          MemoData: memoDataHex,
         },
       },
     ],
