@@ -14,11 +14,7 @@ const PORT = 3000;
 const storage = multer.diskStorage({
 	destination: (req, file, cb) => {
 		cb(null, "models"); 
-	},
-	filename: (req, file, cb) => {
-		const extname = path.extname(file.originalname);
-		cb(null, file.fieldname + extname);
-	},
+	}
 });
 
 const upload = multer({ storage: storage });
@@ -30,6 +26,42 @@ const apiKey = process.env.OPENAI_KEY;
 const openai = new OpenAI({
 	apiKey,
 });
+
+app.get("/", (req, res) => {
+	res.send("Hello World!");
+});
+
+app.get("/api/get-cards", (req, res) => {
+    try {
+        const cardData = JSON.parse(fs.readFileSync("cardData.json"));
+        res.status(200).json(cardData);
+    } catch (err) {
+        res.status(500).json({ message: "Error reading card data" });
+    }
+});
+
+app.get("/api/card", (req, res) => {
+    const cardName = req.query.cardName;
+
+    if (!cardName) {
+        return res.status(400).json({ message: "Missing cardName parameter" });
+    }
+
+    try {
+        const cardData = require("./cardData.json"); // Load the JSON file
+
+        // Check if the cardName exists in the cardData object
+        if (cardData.hasOwnProperty(cardName)) {
+            const card = cardData[cardName];
+            res.status(200).json(card);
+        } else {
+            res.status(404).json({ message: "Card not found" });
+        }
+    } catch (err) {
+        res.status(500).json({ message: "Error reading card data" });
+    }
+});
+
 
 app.post("/api/create", upload.single("model"), async (req, res) => {
     try {
@@ -45,7 +77,7 @@ app.post("/api/create", upload.single("model"), async (req, res) => {
         try {
             cardData = JSON.parse(fs.readFileSync("cardData.json"));
         } catch (err) {
-            
+            res.status(500).json({ message: "Error uploading reading file" });
         }
 
         const moveset = await generateMoveset(name);
