@@ -35,8 +35,8 @@ async function xrpmain(cardData) {
 	};
 
 	// Sign and autofill the transaction
-	const prepared = await client.autofill(payment_tx);
-	const keypair = xrpl.Keypair.fromSecret(wallet1.secret);
+	const prepared = await client.autofill(tx);
+	const keypair = xrpl.Keypair.fromSecret(test_wallet.secret);
 	const signed = prepared.signWithKeypair(keypair);
 
 	// Submit the transaction and wait for response
