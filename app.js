@@ -64,6 +64,8 @@ app.post("/api/create", upload.single("model"), async (req, res) => {
 // Function to generate a moveset using GPT-3.5 Turbo
 async function generateMoveset(name) {
 	try {
+
+    promptToSend = "Generate a moveset for a card game character consisting of two moves based on the name of the object/character. Each move should deal between 10 - 25 damage points. Try and base the damage values based on how dangerous or unique the object is. The movedescription should be a one line phrase. Return this moveset in the following format: { moveOne{name: moveName,damage: #, moveDescription: insert a relevant description}, moveTwo{name: moveName,damage: #, moveDescription: insert a relevant description} } Name: " + name
 		const response = await openai.createChatCompletion({
 			model: "gpt-3.5-turbo",
 			messages: [
@@ -73,7 +75,7 @@ async function generateMoveset(name) {
 				},
 				{
 					role: "user",
-					content: name,
+					content: promptToSend,
 				},
 			],
 			max_tokens: 500,
