@@ -218,33 +218,8 @@ app.post("/api/create", upload.single("model"), async (req, res) => {
 
 	fs.writeFileSync("cardData.json", JSON.stringify(cardData, null, 2));
 
-	/*
-        const xrpAddress = user_store[userid].xrpAddress ; 
-        const xrpAmount = '10'; 
-        const payment = {
-            source: {
-                address:my_wallet, 
-                maxAmount: {
-                    value: xrpAmount,
-                    currency: 'XRP'
-                }
-            },
-            destination: {
-                address: xrpAddress,
-                amount: {
-                    value: xrpAmount,
-                    currency: 'XRP'
-                }
-            }
-        };
 
-     
-        const preparedPayment = await xrpAPI.preparePayment(my_wallet, payment);
-        const signedPayment = xrpAPI.sign(preparedPayment, private_key); 
-        const result = await xrpAPI.submit(signedPayment.signedTransaction);
-        console.log('XRP Transaction Result:', result);
-        */
-
+  /*
 	// Create a client to connect to the XRPL test network
 	const client = new xrpl.Client("wss://s.altnet.rippletest.net:51233");
 
@@ -297,6 +272,7 @@ app.post("/api/create", upload.single("model"), async (req, res) => {
 	console.log(get_balance(wallet1.classic_address, client));
 	console.log(get_balance(wallet2.classic_address, client));
 
+  */
 	console.log("Write successful");
 
 	res.status(200).json({
